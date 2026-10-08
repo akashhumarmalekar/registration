@@ -86,19 +86,34 @@ function normalizeMobile(raw) {
   return d.length === 10 ? d : '';
 }
 
-// If the desk app has published its category / followup lists, turn those fields into dropdowns.
-function toSelect(id, list) {
+// ---- Fixed dropdown options -------------------------------------------------
+// Edit these two lists if you want. When the desk app is online it publishes its own
+// live lists, which replace these automatically (so new followups/categories appear on their own).
+const FOLLOWUPS = [
+  "Aditya Piyush Shrotriya",
+  "Akash Shekhar Humarmalekar",
+  "Dhaval Dhiru Chhaya",
+  "Vinit Sanjay Hindocha",
+  "Yash Jayanti Kaila"
+];
+const CATEGORIES = ["All Rounder", "Batsman", "Bhagat", "Yuvak"];
+
+function setOptions(id, list, placeholder) {
   if (!Array.isArray(list) || !list.length) return;
-  const sel = document.createElement('select');
-  sel.id = id;
-  sel.innerHTML = '<option value="">Select\u2026</option>' + list.map(v => `<option>${esc(v)}</option>`).join('');
-  $(id).replaceWith(sel);
+  let el = $(id);
+  if (el.tagName !== 'SELECT') { const sel = document.createElement('select'); sel.id = id; el.replaceWith(sel); el = sel; }
+  const keep = el.value;
+  el.innerHTML = `<option value="">${placeholder}</option>` + list.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
+  if (keep && list.includes(keep)) el.value = keep;
 }
+setOptions('followup', FOLLOWUPS, 'Select your followup\u2026');
+setOptions('category', CATEGORIES, 'Select category\u2026');
+
 db.collection(SIGNUPS).doc('_config').get().then(d => {
   if (!d.exists) return;
-  toSelect('followup', d.data().followups);
-  toSelect('category', d.data().categories);
-}).catch(() => { /* fall back to plain text boxes */ });
+  setOptions('followup', d.data().followups, 'Select your followup\u2026');
+  setOptions('category', d.data().categories, 'Select category\u2026');
+}).catch(() => { /* keep the built-in lists above */ });
 
 $('form').addEventListener('input', e => e.target.classList.remove('err'));
 $('form').addEventListener('change', e => e.target.classList.remove('err'));
@@ -134,7 +149,7 @@ $('form').addEventListener('submit', async e => {
     show(fullName);
   } catch (err) {
     console.error(err);
-    msg.textContent = 'Could not submit. Check your internet and try again, or register at the desk.';
+    msg.textContent = 'Could not submit' + (err && err.code ? ' (' + err.code + ')' : '') + '. Please try again, or register at the desk.';
   } finally {
     btn.disabled = false; btn.textContent = 'Register';
   }
