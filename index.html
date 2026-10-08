@@ -38,7 +38,7 @@
 </head>
 <body>
 <header>
-  <h1>Anand APL 2026</h1>
+  <h1 id="tn">Anand APL 2026</h1>
   <p>Player registration</p>
 </header>
 <main>
@@ -111,6 +111,8 @@ setOptions('category', CATEGORIES, 'Select category\u2026');
 
 db.collection(SIGNUPS).doc('_config').get().then(d => {
   if (!d.exists) return;
+  const nm = d.data().tournamentName;
+  if (nm) { $('tn').textContent = nm; document.title = nm + ' \u00B7 Register'; }
   setOptions('followup', d.data().followups, 'Select your followup\u2026');
   setOptions('category', d.data().categories, 'Select category\u2026');
 }).catch(() => { /* keep the built-in lists above */ });
