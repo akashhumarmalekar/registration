@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0B3B2C">
+<title>Anand APL 2026 · Register</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --navy:#0B3B2C; --gold:#CFE62E; --bg:#EFF3EC; --border:#DCE4D7; --text:#14211B; --muted:#62705F; --green:#14833F; --red:#B6362B; --red-bg:#FCE9E6; --ring:0 0 0 3px rgba(20,131,63,.28); }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:"Figtree",-apple-system,"Segoe UI",Roboto,sans-serif; -webkit-tap-highlight-color:transparent; }
+  header { background:linear-gradient(to bottom, transparent 30%, var(--navy)), repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 56px, transparent 56px 112px), var(--navy); color:#fff; padding:30px 20px 34px; text-align:center; }
+  header h1 { margin:0; font-family:"Bricolage Grotesque","Segoe UI",sans-serif; font-size:30px; font-weight:800; letter-spacing:-.01em; }
+  header p { margin:4px 0 0; color:var(--gold); font-weight:600; font-size:15px; }
+  main { max-width:520px; margin:-18px auto 40px; padding:0 14px; }
+  .card { background:#fff; border:1px solid var(--border); border-radius:18px; padding:22px; box-shadow:0 14px 32px -18px rgba(11,59,44,.45); border-top:4px solid var(--gold); }
+  .fg { margin-bottom:16px; }
+  label { display:block; font-size:14px; font-weight:700; margin-bottom:6px; }
+  label b { color:var(--red); }
+  input, select { width:100%; font-family:inherit; font-size:17px; padding:13px 14px; border:2px solid var(--border); border-radius:12px; background:#FAFCF8; color:var(--text); outline:none; transition:border-color .12s, box-shadow .12s; }
+  input:focus, select:focus { border-color:var(--green); box-shadow:var(--ring); background:#fff; }
+  .err { border-color:var(--red) !important; background:var(--red-bg) !important; }
+  .hp { position:absolute; left:-9999px; width:1px; height:1px; opacity:0; }
+  button { width:100%; min-height:54px; font-family:"Bricolage Grotesque","Segoe UI",sans-serif; font-size:18px; font-weight:700; color:#fff; background:var(--navy); border:0; border-radius:12px; cursor:pointer; transition:background .12s, transform .06s; }
+  button:hover { background:#145040; } button:active { transform:translateY(1px); } button:disabled { opacity:.6; cursor:wait; }
+  button.ghost { background:#fff; color:var(--navy); border:2px solid var(--border); margin-top:14px; }
+  .msg { min-height:22px; margin:12px 0 0; font-size:15px; font-weight:600; color:var(--red); }
+  .done { text-align:center; padding:12px 0 4px; }
+  .tick { width:68px; height:68px; margin:0 auto 14px; border-radius:50%; background:var(--gold); color:var(--navy); font-size:38px; line-height:68px; font-weight:800; }
+  .done h2 { margin:0 0 6px; font-family:"Bricolage Grotesque","Segoe UI",sans-serif; font-size:24px; }
+  .done p { margin:0; color:var(--muted); font-size:15.5px; }
+  .note { text-align:center; color:var(--muted); font-size:13px; margin-top:16px; }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Anand APL 2026</h1>
+  <p>Player registration</p>
+</header>
+<main>
+  <div class="card">
+    <form id="form" novalidate>
+      <div class="fg"><label for="fullName">Full name <b>*</b></label><input id="fullName" type="text" autocomplete="name" placeholder="First, middle and last name"></div>
+      <div class="fg"><label for="followup">Followup <b>*</b></label><input id="followup" type="text" autocomplete="off" placeholder="Name of your followup person"></div>
+      <div class="fg"><label for="mobile">Contact (mobile) <b>*</b></label><input id="mobile" type="tel" inputmode="tel" autocomplete="tel" placeholder="10-digit number"></div>
+      <div class="fg"><label for="category">Category <b>*</b></label><input id="category" type="text" autocomplete="off" placeholder="e.g. Batsman"></div>
+      <input class="hp" id="website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <button type="submit" id="submitBtn">Register</button>
+      <div class="msg" id="msg" role="status"></div>
+    </form>
+    <div class="done" id="done" hidden>
+      <div class="tick">&#10003;</div>
+      <h2 id="doneTitle">You're registered!</h2>
+      <p>Your details have been sent to the registration desk.</p>
+      <button type="button" class="ghost" id="again">Register another person</button>
+    </div>
+  </div>
+  <p class="note">Problems submitting? Please check in at the registration desk.</p>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// Same Firebase project as the main registration app.
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCVxe8CqMxR--SS9Dajo5IUwO2c3bBCmaU",
+  authDomain: "anand-attendance.firebaseapp.com",
+  projectId: "anand-attendance",
+  storageBucket: "anand-attendance.firebasestorage.app",
+  messagingSenderId: "33645380972",
+  appId: "1:33645380972:web:1f4dcd6a09c03f959a9f49"
+};
+const SIGNUPS = 'anand_apl_2026_signups';
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.firestore();
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+
+function normalizeMobile(raw) {
+  let d = String(raw || '').replace(/\D/g, '');
+  if (d.length === 12 && d.startsWith('91')) d = d.slice(2);
+  return d.length === 10 ? d : '';
+}
+
+// If the desk app has published its category / followup lists, turn those fields into dropdowns.
+function toSelect(id, list) {
+  if (!Array.isArray(list) || !list.length) return;
+  const sel = document.createElement('select');
+  sel.id = id;
+  sel.innerHTML = '<option value="">Select\u2026</option>' + list.map(v => `<option>${esc(v)}</option>`).join('');
+  $(id).replaceWith(sel);
+}
+db.collection(SIGNUPS).doc('_config').get().then(d => {
+  if (!d.exists) return;
+  toSelect('followup', d.data().followups);
+  toSelect('category', d.data().categories);
+}).catch(() => { /* fall back to plain text boxes */ });
+
+$('form').addEventListener('input', e => e.target.classList.remove('err'));
+$('form').addEventListener('change', e => e.target.classList.remove('err'));
+
+$('form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const msg = $('msg'); msg.textContent = '';
+  const f = { fullName: $('fullName'), followup: $('followup'), mobile: $('mobile'), category: $('category') };
+  Object.values(f).forEach(x => x.classList.remove('err'));
+  const fullName = f.fullName.value.trim().replace(/\s+/g, ' ');
+  const followup = f.followup.value.trim();
+  const mobile = normalizeMobile(f.mobile.value);
+  const category = f.category.value.trim();
+
+  const bad = [];
+  if (!fullName) bad.push([f.fullName, 'Full name']);
+  if (!followup) bad.push([f.followup, 'Followup']);
+  if (!f.mobile.value.trim()) bad.push([f.mobile, 'Contact']); else if (!mobile) bad.push([f.mobile, 'a valid 10-digit contact number']);
+  if (!category) bad.push([f.category, 'Category']);
+  if (bad.length) {
+    bad.forEach(b => b[0].classList.add('err'));
+    msg.textContent = 'Please fill in: ' + bad.map(b => b[1]).join(', ') + '.';
+    bad[0][0].focus();
+    return;
+  }
+
+  if ($('website').value) { show(fullName); return; } // honeypot: bots fill this, humans never see it
+
+  const btn = $('submitBtn'); btn.disabled = true; btn.textContent = 'Submitting\u2026';
+  try {
+    const write = db.collection(SIGNUPS).add({ fullName, followup, mobile, category, createdAt: Date.now(), source: 'qr' });
+    await Promise.race([write, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 15000))]);
+    show(fullName);
+  } catch (err) {
+    console.error(err);
+    msg.textContent = 'Could not submit. Check your internet and try again, or register at the desk.';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Register';
+  }
+});
+
+function show(name) {
+  $('form').hidden = true; $('done').hidden = false;
+  $('doneTitle').textContent = `You're registered, ${name.split(' ')[0]}!`;
+}
+$('again').addEventListener('click', () => {
+  $('form').reset(); $('form').hidden = false; $('done').hidden = true; $('fullName').focus();
+});
+</script>
+</body>
+</html>
